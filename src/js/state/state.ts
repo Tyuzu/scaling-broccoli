@@ -2,21 +2,35 @@ type State = {
   language: string;
 };
 
-const state: State = {
+let state: State = {
   language: 'en'
 };
 
-const listeners: ((s: State) => void)[] = [];
+const listeners = new Set<(s: State) => void>();
 
-export function getState() {
+export function getState(): Readonly<State> {
   return state;
 }
 
 export function setState(partial: Partial<State>) {
-  Object.assign(state, partial);
-  listeners.forEach(l => l(state));
+  const nextState = { ...state, ...partial };
+
+  // shallow change detection
+  const changed = Object.keys(partial).some(
+    key => state[key as keyof State] !== nextState[key as keyof State]
+  );
+
+  if (!changed) return;
+
+  state = nextState;
+
+  listeners.forEach(listener => listener(state));
 }
 
 export function subscribe(listener: (s: State) => void) {
-  listeners.push(listener);
+  listeners.add(listener);
+
+  return () => {
+    listeners.delete(listener);
+  };
 }

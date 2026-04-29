@@ -1,4 +1,4 @@
-import { initRouter } from './routes/router';
+import { initRouter } from './js/routes/router';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = '';
 
