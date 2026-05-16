@@ -69,5 +69,8 @@ export const ServiceKeys = {
   STATE: 'state',
   ROUTER: 'router',
   API: 'api',
-  USER_SERVICE: 'userService'
+  USER_SERVICE: 'userService',
+  CART_SERVICE: 'cartService',
+  CHECKOUT_SERVICE: 'checkoutService',
+  PAYMENT_SERVICE: 'paymentService'
 } as const;

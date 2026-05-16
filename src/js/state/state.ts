@@ -1,12 +1,24 @@
 import { eventBus, Events } from '../core/EventEmitter';
+import type { Cart } from '../services/CartService';
 
 export type State = {
   language: string;
+  cart?: Cart;
+  currentOrder?: any;
+  isCheckingOut?: boolean;
   [key: string]: any; // Allow extension
 };
 
 let state: State = {
-  language: 'en'
+  language: 'en',
+  cart: {
+    items: [],
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+    itemCount: 0
+  },
+  isCheckingOut: false
 };
 
 const listeners = new Set<(s: State) => void>();

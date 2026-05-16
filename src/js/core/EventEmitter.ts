@@ -83,5 +83,16 @@ export const Events = {
   ERROR: 'error:occurred',
   ROUTE_LOADING: 'route:loading',
   ROUTE_LOADED: 'route:loaded',
-  ROUTE_ERROR: 'route:error'
+  ROUTE_ERROR: 'route:error',
+  // E-commerce events
+  CART_ITEM_ADDED: 'cart:item:added',
+  CART_ITEM_REMOVED: 'cart:item:removed',
+  CART_CLEARED: 'cart:cleared',
+  CART_UPDATED: 'cart:updated',
+  CHECKOUT_STARTED: 'checkout:started',
+  CHECKOUT_COMPLETED: 'checkout:completed',
+  CHECKOUT_FAILED: 'checkout:failed',
+  PAYMENT_INITIATED: 'payment:initiated',
+  PAYMENT_PROCESSED: 'payment:processed',
+  PAYMENT_FAILED: 'payment:failed'
 } as const;

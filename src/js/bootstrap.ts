@@ -11,6 +11,7 @@ import { ConsoleLogger, type ILogger } from './core/Logger';
 import { DefaultErrorHandler, type IErrorHandler } from './core/ErrorHandler';
 import { ApiService, type IApiService } from './services/ApiService';
 import { createUserService, type IUserService } from './services/user';
+import { initializeEcommerce } from './components/composed/ecommerceIntegration';
 
 /**
  * Initialize all application services
@@ -32,6 +33,9 @@ export function initializeServices(): void {
   // Register user service (requires API service)
   const userService: IUserService = createUserService(apiService, errorHandler);
   serviceRegistry.register<IUserService>(ServiceKeys.USER_SERVICE, userService);
+
+  // Initialize e-commerce services
+  initializeEcommerce(serviceRegistry);
 }
 
 /**

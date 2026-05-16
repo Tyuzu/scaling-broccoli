@@ -6,3 +6,6 @@
 export * from './BaseService';
 export * from './ApiService';
 export * from './user';
+export * from './CartService';
+export * from './CheckoutService';
+export * from './PaymentService';

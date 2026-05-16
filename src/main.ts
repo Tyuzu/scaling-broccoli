@@ -3,10 +3,20 @@
  * Initializes all core services and starts the application
  */
 
+// Import styles
+import './css/ecommerce.css';
+import './css/navigation.css';
+import './css/products.css';
+
 import { initializeServices } from './js/bootstrap';
 import { initRouter } from './js/routes/router';
 import { initI18n } from './js/i18n/i18n';
 import { eventBus, Events } from './js/core/EventEmitter';
+import { createHeader } from './js/components/ui/header';
+import { createNav } from './js/components/ui/nav';
+import { showCartModal } from './js/components/composed/ecommerceIntegration';
+import { serviceRegistry, ServiceKeys } from './js/core/ServiceRegistry';
+import type { CartService } from './js/services/CartService';
 
 /**
  * Initialize and boot the application
@@ -35,6 +45,35 @@ async function bootstrap() {
     eventBus.on(Events.LANGUAGE_CHANGED, (data) => {
       console.debug('🌍 Language changed:', data.language);
     });
+
+    // Create and mount header with cart button
+    const header = createHeader({
+      title: 'Vitex Shop',
+      onCartClick: () => {
+        const cartService = serviceRegistry.get<CartService>(ServiceKeys.CART_SERVICE);
+        showCartModal(cartService, () => {
+          // Handle checkout click
+          console.log('Proceeding to checkout...');
+          // Checkout logic will be handled by the user
+        });
+      },
+      onNavigate: (path) => {
+        console.log('Navigating to:', path);
+        eventBus.emit(Events.NAVIGATION, { path });
+      }
+    });
+
+    // Create and mount navigation
+    const nav = createNav({
+      onNavigate: (path) => {
+        console.log('Navigating to:', path);
+        eventBus.emit(Events.NAVIGATION, { path });
+      }
+    });
+
+    // Prepend header and nav to document
+    document.body.insertBefore(nav, document.body.firstChild);
+    document.body.insertBefore(header, document.body.firstChild);
 
     // Initialize router
     initRouter('#app');
