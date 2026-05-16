@@ -1,35 +1,28 @@
+/**
+ * Router module - decoupled from route definitions.
+ * Routes are managed in config/routes.ts
+ * Uses event emitter for loose coupling with rest of app.
+ */
+
+import { routes, type Route } from '../config/routes';
+import { eventBus, Events } from '../core/EventEmitter';
+
 type Params = Record<string, string>;
 
-type PageModule = {
-  default?: (params: any, query: Params) => string;
-  render?: (params: any, query: Params) => string;
-};
-
-type Route = {
-  path: string;
-  loader: () => Promise<PageModule>;
-};
-
-const routes: Route[] = [
-  {
-    path: '/',
-    loader: () => import('../pages/home.ts')
-  },
-  {
-    path: '/about',
-    loader: () => import('../pages/about.ts')
-  },
-  {
-    path: '/user/:id',
-    loader: () => import('../pages/user.ts')
-  }
-];
-
 let currentRequest = 0;
+let appElement: HTMLDivElement | null = null;
 
-export function initRouter() {
+export function initRouter(selector: string = '#app') {
+  appElement = document.querySelector<HTMLDivElement>(selector);
+  
+  if (!appElement) {
+    throw new Error(`App container not found: ${selector}`);
+  }
+
+  // Handle browser back/forward
   window.addEventListener('popstate', renderRoute);
 
+  // Handle link clicks with data-link attribute
   document.body.addEventListener('click', (e) => {
     const link = (e.target as HTMLElement).closest('[data-link]');
     if (link) {
@@ -39,6 +32,7 @@ export function initRouter() {
     }
   });
 
+  // Render initial route
   renderRoute();
 }
 
@@ -50,12 +44,17 @@ export function navigate(path: string) {
 async function renderRoute() {
   const requestId = ++currentRequest;
 
+  if (!appElement) {
+    console.error('Router not initialized');
+    return;
+  }
+
   const url = new URL(location.href);
   const path = url.pathname;
   const query = Object.fromEntries(url.searchParams.entries());
 
-  const app = document.querySelector<HTMLDivElement>('#app')!;
-  app.innerHTML = '<p>Loading...</p>';
+  appElement.innerHTML = '<p>Loading...</p>';
+  eventBus.emit(Events.ROUTE_LOADING, { path });
 
   // Sort routes: more static segments first
   const rankedRoutes = [...routes].sort(rankRoute);
@@ -65,26 +64,36 @@ async function renderRoute() {
 
     if (params) {
       try {
+        eventBus.emit(Events.ROUTE_LOADING, { path, route: route.name });
+        
         const mod = await route.loader();
 
+        // Discard if newer request came in
         if (requestId !== currentRequest) return;
 
         const render = mod.render || mod.default;
         if (!render) throw new Error('No render function exported');
 
-        app.innerHTML = render(params, query);
+        const html = render(params, query);
+        appElement.innerHTML = html;
         window.scrollTo(0, 0);
+
+        eventBus.emit(Events.ROUTE_LOADED, { path, route: route.name });
       } catch (err) {
         if (requestId !== currentRequest) return;
 
-        app.innerHTML = '<h1>Error loading page</h1>';
-        console.error(err);
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        appElement.innerHTML = `<div class="error"><h1>Error loading page</h1><p>${errorMsg}</p></div>`;
+        
+        eventBus.emit(Events.ROUTE_ERROR, { path, error: errorMsg });
+        console.error('Route error:', err);
       }
       return;
     }
   }
 
-  app.innerHTML = '<h1>404</h1>';
+  appElement.innerHTML = '<div class="not-found"><h1>404</h1><p>Page not found</p></div>';
+  eventBus.emit(Events.ROUTE_ERROR, { path, error: 'Not Found' });
 }
 
 function matchRoute(routePath: string, actualPath: string): Params | null {
@@ -111,6 +120,7 @@ function matchRoute(routePath: string, actualPath: string): Params | null {
 
 /**
  * Rank routes: static segments > dynamic
+ * Ensures more specific routes are matched first
  */
 function rankRoute(a: Route, b: Route) {
   const score = (path: string) =>
